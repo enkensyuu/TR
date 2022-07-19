@@ -12,6 +12,30 @@ const int WIN_WIDTH = 600;
 // ウィンドウ縦幅
 const int WIN_HEIGHT = 400;
 
+void show(int x[], int num2)
+{
+	for (int i = 0; i < num2; i++)
+	{
+		printf("%d", x[i]);
+	}
+}
+
+void insert(int y[], int num3)
+{
+	int j, tmp;
+	for (int i = 0; i < num3; i++)
+	{
+		j = i;
+		tmp = y[j];
+		while (j > 0 && y[j - 1] > tmp)
+		{
+			y[j] = y[j - 1];
+			j--;
+		}
+		y[j] = tmp;
+	}
+}
+
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine,
 	_In_ int nCmdShow) {
 	// ウィンドウモードに設定
@@ -45,11 +69,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	// ゲームループで使う変数の宣言
 	Player* player = new Player;
 	Finish* finish = new Finish();
-	int	score1;
-	int	score2;
-	int	score3;
-	int	score4;
-	int	score5;
+	int	score[5];
 
 	// 最新のキーボード情報用
 	char keys[256] = { 0 };
@@ -74,15 +94,37 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		// 更新処理
 		player->Move(keys);
 		finish->Move(keys);
+		const int num = 5;
+		int score[num];
+		int i;
 
 		FILE* fp;
-
+		
 		char fname[] = "Ranking.csv";
-
+		
 		errno_t err;
+
+		err = fopen_s(&fp, fname, "r");
+		if (fp == nullptr)
+		{
+			printf("err");
+		}
+		
+		else {
+			fscanf_s(fp, "%d,%d,%d,%d,%d", &score[0], &score[1], &score[2], &score[3], &score[4]);
+			fclose(fp);
+		}
 
 		if (finish->Finishflag == 1)
 		{
+			show(score, num);
+			insert(score, num);
+
+			if (score[0] <= player->KeyPush)
+			{
+				score[0] = player->KeyPush;
+			}
+
 			err = fopen_s(&fp, fname, "w");
 
 			if (fp == nullptr)
@@ -90,62 +132,21 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				printf("err");
 			}
 			else {
-				if (player->KeyPush > score1)
-				{
-					score5 = score4;
-					score4 = score3;
-					score3 = score2;
-					score2 = score1;
-					score1 = player->KeyPush;
-				}
-				else if (player->KeyPush >= score2 && player->KeyPush < score1)
-				{
-					score5 = score4;
-					score4 = score3;
-					score3 = score2;
-					score2 = player->KeyPush;
-				}
-				else if (player->KeyPush >= score3 && player->KeyPush < score2)
-				{
-					score5 = score4;
-					score4 = score3;
-					score3 = player->KeyPush;
-				}
-				else if (player->KeyPush >= score4 && player->KeyPush < score3)
-				{
-					score5 = score4;
-					score4 = player->KeyPush;
-				}
-				else if (player->KeyPush >= score5 && player->KeyPush < score4)
-				{
-					score5 = player->KeyPush;
-				}
-				fprintf(fp, "%d,%d,%d,%d,%d", &score1, &score2, &score3, &score4, &score5);
+				fprintf(fp, "%d,%d.%d,%d,%d", score[0], score[1], score[2], score[3], score[4]);
 				fclose(fp);
-
-				player->KeyPush = 0;
+			
 			}
-		}
 
-		err = fopen_s(&fp, fname, "r");
-
-		if (fp == nullptr)
-		{
-			printf("err");
-		}
-
-		else {
-			fscanf_s(fp, "%d,%d,%d,%d,%d", &score1, &score2, &score3, &score4, &score5);
-			fclose(fp);
+			player->KeyPush = 0;
 		}
 
 		// 描画処理
-		DrawFormatString(250, 0, GetColor(255, 255, 255), "push=%d", score1);
-		DrawFormatString(250, 50, GetColor(255, 255, 255), "push=%d", score2);
-		DrawFormatString(250, 100, GetColor(255, 255, 255), "push=%d", score3);
-		DrawFormatString(250, 150, GetColor(255, 255, 255), "push=%d", score4);
-		DrawFormatString(250, 200, GetColor(255, 255, 255), "push=%d", score5);
-		DrawFormatString(250, 250, GetColor(255, 255, 255), "push=%d", player->KeyPush);
+		DrawFormatString(250, 50, GetColor(255, 255, 255), "score1=%d", score[4]);
+		DrawFormatString(250, 100, GetColor(255, 255, 255), "score2=%d", score[3]);
+		DrawFormatString(250, 150, GetColor(255, 255, 255), "score3=%d", score[2]);
+		DrawFormatString(250, 200, GetColor(255, 255, 255), "score4=%d", score[1]);
+		DrawFormatString(250, 250, GetColor(255, 255, 255), "score5=%d", score[0]);
+		DrawFormatString(250, 300, GetColor(255, 255, 255), "push=%d", player->KeyPush);
 
 		//---------  ここまでにプログラムを記述  ---------//
 		// (ダブルバッファ)裏面
